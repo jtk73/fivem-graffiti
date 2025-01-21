@@ -67,6 +67,6 @@ Use `pnpm watch` to rebuild whenever a file is modified.
 
 - Removes a zone from the database.
 
-## Suppport
+## Support
 
 For any feedback or support regarding this script, please reach out on [discord](https://discord.com/invite/QZgyyBkUkp).
