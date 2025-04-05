@@ -1,10 +1,10 @@
-import * as Cfx from '@nativewrappers/fivem-server';
+import * as Cfx from '@nativewrappers/fivem';
 import { addCommand } from '@overextended/ox_lib/server';
-import { Graffiti } from '../@types/Graffiti';
-import { RestrictedZones } from '../@types/RestrictedZones';
-import * as config from '../config.json';
+import * as config from '../../static/config.json';
+import type { Graffiti } from '../@types/Graffiti';
+import type { RestrictedZones } from '../@types/RestrictedZones';
+import { getArea, getDistance, getHex, hasItem, isAdmin, sendChatMessage } from '../common/utils';
 import * as db from './db';
-import { getArea, getDistance, getHex, hasItem, isAdmin, sendChatMessage } from './utils';
 
 const graffitiTags: Record<number, Graffiti> = {};
 const restrictedZones: Record<number, RestrictedZones> = {};
@@ -16,13 +16,19 @@ const cooldown: number = 60 * 1000;
 
 // -- Graffiti --
 
-async function createGraffiti(source: number, args: { text: string; font: number; size: number; hex: string }): Promise<void> {
+async function createGraffiti(
+  source: number,
+  args: { text: string; font: number; size: number; hex: string },
+): Promise<void> {
   // @ts-ignore
   const identifier: string = GetPlayerIdentifierByType(source, config.identifier_type);
   const activeGraffiti: number = await db.countGraffiti(identifier);
 
   if (activeGraffiti >= config.max_graffiti_tags) {
-    return sendChatMessage(source, `^#d73232ERROR ^#ffffffYou cannot have more than ${config.max_graffiti_tags} active Graffiti Tags at a time.`);
+    return sendChatMessage(
+      source,
+      `^#d73232ERROR ^#ffffffYou cannot have more than ${config.max_graffiti_tags} active Graffiti Tags at a time.`,
+    );
   }
 
   const time: number = Date.now();
@@ -30,7 +36,10 @@ async function createGraffiti(source: number, args: { text: string; font: number
 
   if (lastCreated && time - lastCreated < cooldown) {
     const timeLeft: number = Math.ceil((cooldown - (time - lastCreated)) / 1000);
-    return sendChatMessage(source, `^#d73232ERROR ^#ffffffYou need to wait ${timeLeft} seconds before creating another graffiti tag.`);
+    return sendChatMessage(
+      source,
+      `^#d73232ERROR ^#ffffffYou need to wait ${timeLeft} seconds before creating another graffiti tag.`,
+    );
   }
 
   if (!hasItem(source, config.spraycan_item)) {
@@ -100,10 +109,13 @@ async function createGraffiti(source: number, args: { text: string; font: number
       displayed: true,
     };
 
-    console.log(data)
+    console.log(data);
     graffitiTags[id] = data;
     emitNet('fivem-graffiti:client:createGraffitiTag', -1, id, coords, dimension, text, font, size, hex);
-    sendChatMessage(source, '^#5e81acYou have successfully created a Graffiti Tag. Use ^#ffffff/cleangraffiti ^#5e81acto remove it');
+    sendChatMessage(
+      source,
+      '^#5e81acYou have successfully created a Graffiti Tag. Use ^#ffffff/cleangraffiti ^#5e81acto remove it',
+    );
     creationCooldown[source] = time;
   } catch (error) {
     console.error('createGraffiti:', error);
@@ -145,19 +157,22 @@ async function cleanNearestGraffiti(source: number): Promise<void> {
 
     if (closestGraffiti) {
       // -- @todo: stop the cleaning process if `/abortclean` is executed --
-      sendChatMessage(source, '^#5e81acYou are cleaning the wall use ^#c78946/abortclean ^#5e81acto cancel the action!');
+      sendChatMessage(
+        source,
+        '^#5e81acYou are cleaning the wall use ^#c78946/abortclean ^#5e81acto cancel the action!',
+      );
       await Cfx.Delay(100);
       const rowsChanged: unknown = await db.deleteGraffiti(closestGraffiti.id);
       if (rowsChanged && typeof rowsChanged === 'number' && rowsChanged > 0) {
         delete graffitiTags[closestGraffiti.id];
         emitNet('fivem-graffiti:client:deleteGraffitiTag', -1, closestGraffiti.id);
-        sendChatMessage(source, `^#5e81acSuccessfully cleaned the nearest graffiti tag.`);
+        sendChatMessage(source, '^#5e81acSuccessfully cleaned the nearest graffiti tag.');
       }
     } else {
       sendChatMessage(source, '^#d73232No graffiti to clean nearby!');
     }
   } catch (error) {
-    console.error(`cleanNearestGraffiti:`, error);
+    console.error('cleanNearestGraffiti:', error);
     sendChatMessage(source, '^#d73232ERROR ^#ffffffAn error occurred while trying to clean graffiti.');
   }
 }
@@ -184,11 +199,14 @@ async function nearbyGraffiti(source: number): Promise<void> {
     sendChatMessage(source, '^#5e81ac--------- ^#ffffffNearby Graffiti ^#5e81ac---------');
 
     for (const graffiti of nearbyGraffiti) {
-      sendChatMessage(source, `^#ffffffGraffiti ID: ^#5e81ac${graffiti.id} ^#ffffff| Location: ^#5e81ac${graffiti.coords} ^#5e81ac| Dimension: ^#5e81ac${graffiti.dimension} ^#5e81ac| Text: ^#5e81ac${graffiti.text} ^#5e81ac| Font: ^#5e81ac${graffiti.font} ^#5e81ac| Size: ^#5e81ac${graffiti.size} ^#5e81ac| Hex: ^#5e81ac${graffiti.hex}`);
+      sendChatMessage(
+        source,
+        `^#ffffffGraffiti ID: ^#5e81ac${graffiti.id} ^#ffffff| Location: ^#5e81ac${graffiti.coords} ^#5e81ac| Dimension: ^#5e81ac${graffiti.dimension} ^#5e81ac| Text: ^#5e81ac${graffiti.text} ^#5e81ac| Font: ^#5e81ac${graffiti.font} ^#5e81ac| Size: ^#5e81ac${graffiti.size} ^#5e81ac| Hex: ^#5e81ac${graffiti.hex}`,
+      );
     }
   } catch (error) {
-    console.error(`nearbyGraffiti:`, error);
-    sendChatMessage(source, `^#d73232ERROR ^#ffffffAn error occurred while fetching nearby graffiti.`);
+    console.error('nearbyGraffiti:', error);
+    sendChatMessage(source, '^#d73232ERROR ^#ffffffAn error occurred while fetching nearby graffiti.');
   }
 }
 
@@ -214,7 +232,7 @@ async function deleteGraffiti(source: number, args: { graffitiId: number }): Pro
     sendChatMessage(source, `^#5e81ac[ADMIN] ^#ffffffYou removed the graffiti (#${graffitiId}): ${graffiti.text}.`);
   } catch (error) {
     console.error('deleteGraffiti:', error);
-    sendChatMessage(source, `^#d73232ERROR ^#ffffffAn error occurred while deleting graffiti.`);
+    sendChatMessage(source, '^#d73232ERROR ^#ffffffAn error occurred while deleting graffiti.');
   }
 }
 
@@ -233,13 +251,20 @@ async function massRemoveGraffiti(source: number, args: { radius: number; includ
     for (const graffiti of Object.values(graffitiTags)) {
       const graffitiCoords: number[] = JSON.parse(graffiti.coords);
       const distance: number = getDistance(coords, graffitiCoords);
-      if (graffiti.dimension === dimension && distance <= radius && (includeAdmin || graffiti.creator_id === identifier)) {
+      if (
+        graffiti.dimension === dimension &&
+        distance <= radius &&
+        (includeAdmin || graffiti.creator_id === identifier)
+      ) {
         remove.push(graffiti);
       }
     }
 
     if (remove.length === 0) {
-      return sendChatMessage(source, `^#d73232ERROR ^#ffffffNo graffiti found within a radius of ${radius} units in dimension ${dimension}.`);
+      return sendChatMessage(
+        source,
+        `^#d73232ERROR ^#ffffffNo graffiti found within a radius of ${radius} units in dimension ${dimension}.`,
+      );
     }
 
     const success: Promise<void>[] = remove.map(async (graffiti: Graffiti): Promise<void> => {
@@ -252,10 +277,13 @@ async function massRemoveGraffiti(source: number, args: { radius: number; includ
 
     await Promise.all(success);
 
-    sendChatMessage(source, `^#5e81ac[ADMIN] ^#ffffffYou removed ${remove.length} graffiti(s) in the radius of ${radius} units!`);
+    sendChatMessage(
+      source,
+      `^#5e81ac[ADMIN] ^#ffffffYou removed ${remove.length} graffiti(s) in the radius of ${radius} units!`,
+    );
   } catch (error) {
-    console.error(`massRemoveGraffiti:`, error);
-    sendChatMessage(source, `^#d73232ERROR ^#ffffffAn error occurred while trying to mass remove graffiti.`);
+    console.error('massRemoveGraffiti:', error);
+    sendChatMessage(source, '^#d73232ERROR ^#ffffffAn error occurred while trying to mass remove graffiti.');
   }
 }
 
@@ -291,12 +319,15 @@ async function createRestrictedZone(source: number, args: { radius: number }): P
       created_date: createdDate,
     };
 
-    console.log(data)
+    console.log(data);
     restrictedZones[id] = data;
-    sendChatMessage(source, `^#5e81ac[ADMIN] ^#ffffffSuccessfully created a restricted zone with a radius of ${radius} units!`);
+    sendChatMessage(
+      source,
+      `^#5e81ac[ADMIN] ^#ffffffSuccessfully created a restricted zone with a radius of ${radius} units!`,
+    );
   } catch (error) {
     console.error('createRestrictedZone:', error);
-    sendChatMessage(source, `^#d73232ERROR ^#ffffffAn error occurred while creating the restricted zone.`);
+    sendChatMessage(source, '^#d73232ERROR ^#ffffffAn error occurred while creating the restricted zone.');
   }
 }
 
@@ -344,10 +375,13 @@ async function nearbyRestrictedZones(source: number): Promise<void> {
     sendChatMessage(source, '^#5e81ac--------- ^#ffffffNearby Restricted Zones ^#5e81ac---------');
 
     for (const zone of nearbyZones) {
-      sendChatMessage(source, `^#ffffffZone ID: ^#5e81ac${zone.id} ^#ffffff| Location: ^#5e81ac${zone.coords} ^#ffffff| Radius: ^#5e81ac${zone.radius} ^#ffffff| Dimension: ^#5e81ac${zone.dimension}`);
+      sendChatMessage(
+        source,
+        `^#ffffffZone ID: ^#5e81ac${zone.id} ^#ffffff| Location: ^#5e81ac${zone.coords} ^#ffffff| Radius: ^#5e81ac${zone.radius} ^#ffffff| Dimension: ^#5e81ac${zone.dimension}`,
+      );
     }
   } catch (error) {
-    console.error(`nearbyRestrictedZones:`, error);
+    console.error('nearbyRestrictedZones:', error);
     sendChatMessage(source, '^#d73232ERROR ^#ffffffAn error occurred while fetching nearby restricted zones.');
   }
 }
@@ -369,7 +403,8 @@ on('onResourceStart', async (resourceName: string): Promise<void> => {
     graffitiTags[data.id] = data;
   }
 
-  const zones: { creator_id: string; coords: number[]; dimension: number; radius: number }[] | undefined = await db.loadRestrictedZones();
+  const zones: { creator_id: string; coords: number[]; dimension: number; radius: number }[] | undefined =
+    await db.loadRestrictedZones();
   if (!zones) return;
 });
 
@@ -435,33 +470,37 @@ addCommand(['massremovegraffiti', 'removegraffitis'], massRemoveGraffiti, {
   restricted: restrictedGroup,
 });
 
-addCommand(['graffitiinfo'], async (source: number, args: { graffitiId: number }): Promise<void> => {
-  const graffitiId: number = args.graffitiId;
+addCommand(
+  ['graffitiinfo'],
+  async (source: number, args: { graffitiId: number }): Promise<void> => {
+    const graffitiId: number = args.graffitiId;
 
-  try {
-    const graffiti: Graffiti = graffitiTags[graffitiId];
-    if (!graffiti) {
-      sendChatMessage(source, '^#d73232ERROR ^#ffffffNo Graffiti Tag found with the specified ID.');
-      return;
+    try {
+      const graffiti: Graffiti = graffitiTags[graffitiId];
+      if (!graffiti) {
+        sendChatMessage(source, '^#d73232ERROR ^#ffffffNo Graffiti Tag found with the specified ID.');
+        return;
+      }
+
+      sendChatMessage(source, '^#5e81ac--------- ^#ffffffGraffiti Info ^#5e81ac---------');
+      sendChatMessage(source, `^#5e81acCreator: ^#ffffffSpawned by: ${graffiti.creator_id}`);
+      sendChatMessage(source, `^#5e81acCreated date: ^#ffffff${graffiti.created_date}`);
+    } catch (error) {
+      console.error('/graffitiinfo:', error);
+      sendChatMessage(source, '^#d73232ERROR ^#ffffffAn error occurred while fetching graffiti information.');
     }
-
-    sendChatMessage(source, '^#5e81ac--------- ^#ffffffGraffiti Info ^#5e81ac---------')
-    sendChatMessage(source, `^#5e81acCreator: ^#ffffffSpawned by: ${graffiti.creator_id}`)
-    sendChatMessage(source, `^#5e81acCreated date: ^#ffffff${graffiti.created_date}`)
-  } catch (error) {
-    console.error('/graffitiinfo:', error);
-    sendChatMessage(source, '^#d73232ERROR ^#ffffffAn error occurred while fetching graffiti information.');
-  }
-}, {
-  params: [
-    {
-      name: 'graffitiId',
-      paramType: 'number',
-      optional: false,
-    },
-  ],
-  restricted: restrictedGroup,
-});
+  },
+  {
+    params: [
+      {
+        name: 'graffitiId',
+        paramType: 'number',
+        optional: false,
+      },
+    ],
+    restricted: restrictedGroup,
+  },
+);
 
 addCommand(['addrestrictedzone', 'arz'], createRestrictedZone, {
   params: [
@@ -489,63 +528,80 @@ addCommand(['nearbyrestrictedzones', 'nrz'], nearbyRestrictedZones, {
   restricted: restrictedGroup,
 });
 
-addCommand(['agotograffiti'], async (source: number, args: { graffitiId: number }): Promise<void> => {
-  // @ts-ignore
-  const dimension: number = GetPlayerRoutingBucket(source);
-  const graffitiId: number = args.graffitiId;
-
-  try {
-    const graffiti = graffitiTags[graffitiId];
-    if (!graffiti) {
-      sendChatMessage(source, `^#d73232ERROR ^#ffffffGraffiti with ID ${graffitiId} couldn't be found.`);
-      return;
-    }
-
-    const graffitiDimension: number = graffiti.dimension;
-    if (dimension !== graffitiDimension) {
-      // @ts-ignore
-      SetPlayerRoutingBucket(source, graffitiDimension);
-      // @ts-ignore
-      SetEntityCoords(GetPlayerPed(source), graffiti.coords, false, false, false, false);
-      sendChatMessage(source, `^#5e81acYou have successfully teleported to graffiti ID ${graffitiId} in dimension ${graffitiDimension}`);
-    } else {
-      sendChatMessage(source, `^#f39c12You are already in dimension ${graffitiDimension}.`);
-    }
-  } catch (error) {
-    console.error(`/agotograffiti:`, error);
-    sendChatMessage(source, '^#d73232ERROR ^#ffffffAn error occurred while teleporting to graffiti.');
-  }
-}, {
-  params: [
-    {
-      name: 'graffitiId',
-      paramType: 'number',
-      optional: false,
-    },
-  ],
-  restricted: restrictedGroup,
-});
-
-// Unfortunately need this fallback to handle cases where users 
-// don't have a mechanism to reset their dimension properly lol
-addCommand(['aresetbucket'], async (source: number): Promise<void> => {
-  // @ts-ignore
-  const dimension: number = GetPlayerRoutingBucket(source);
-  const defaultDimension: number = 0;
-
-  try {
-    if (dimension === defaultDimension) {
-      sendChatMessage(source, `^#5e81ac[ADMIN] ^#ffffffYou are already in the default dimension ^#5e81ac${defaultDimension}^#ffffff.`);
-      return;
-    }
-
+addCommand(
+  ['agotograffiti'],
+  async (source: number, args: { graffitiId: number }): Promise<void> => {
     // @ts-ignore
-    SetPlayerRoutingBucket(source, defaultDimension);
-    sendChatMessage(source, `^#5e81ac[ADMIN] ^#ffffffYou have left dimension ^#5e81ac${dimension} ^#ffffffand entered dimension ^#5e81ac${defaultDimension}^#ffffff.`);
-  } catch (error) {
-    console.error(`/aresetbucket:`, error);
-    sendChatMessage(source, '^#d73232ERROR ^#ffffffAn error occurred while trying to reset your dimension.');
-  }
-}, {
-  restricted: restrictedGroup,
-});
+    const dimension: number = GetPlayerRoutingBucket(source);
+    const graffitiId: number = args.graffitiId;
+
+    try {
+      const graffiti = graffitiTags[graffitiId];
+      if (!graffiti) {
+        sendChatMessage(source, `^#d73232ERROR ^#ffffffGraffiti with ID ${graffitiId} couldn't be found.`);
+        return;
+      }
+
+      const graffitiDimension: number = graffiti.dimension;
+      if (dimension !== graffitiDimension) {
+        // @ts-ignore
+        SetPlayerRoutingBucket(source, graffitiDimension);
+        // @ts-ignore
+        SetEntityCoords(GetPlayerPed(source), graffiti.coords, false, false, false, false);
+        sendChatMessage(
+          source,
+          `^#5e81acYou have successfully teleported to graffiti ID ${graffitiId} in dimension ${graffitiDimension}`,
+        );
+      } else {
+        sendChatMessage(source, `^#f39c12You are already in dimension ${graffitiDimension}.`);
+      }
+    } catch (error) {
+      console.error('/agotograffiti:', error);
+      sendChatMessage(source, '^#d73232ERROR ^#ffffffAn error occurred while teleporting to graffiti.');
+    }
+  },
+  {
+    params: [
+      {
+        name: 'graffitiId',
+        paramType: 'number',
+        optional: false,
+      },
+    ],
+    restricted: restrictedGroup,
+  },
+);
+
+// Unfortunately need this fallback to handle cases where users
+// don't have a mechanism to reset their dimension properly lol
+addCommand(
+  ['aresetbucket'],
+  async (source: number): Promise<void> => {
+    // @ts-ignore
+    const dimension: number = GetPlayerRoutingBucket(source);
+    const defaultDimension: number = 0;
+
+    try {
+      if (dimension === defaultDimension) {
+        sendChatMessage(
+          source,
+          `^#5e81ac[ADMIN] ^#ffffffYou are already in the default dimension ^#5e81ac${defaultDimension}^#ffffff.`,
+        );
+        return;
+      }
+
+      // @ts-ignore
+      SetPlayerRoutingBucket(source, defaultDimension);
+      sendChatMessage(
+        source,
+        `^#5e81ac[ADMIN] ^#ffffffYou have left dimension ^#5e81ac${dimension} ^#ffffffand entered dimension ^#5e81ac${defaultDimension}^#ffffff.`,
+      );
+    } catch (error) {
+      console.error('/aresetbucket:', error);
+      sendChatMessage(source, '^#d73232ERROR ^#ffffffAn error occurred while trying to reset your dimension.');
+    }
+  },
+  {
+    restricted: restrictedGroup,
+  },
+);

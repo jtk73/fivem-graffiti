@@ -2,7 +2,7 @@ import { cache } from '@overextended/ox_lib/client';
 
 export function netEvent<T extends any[]>(event: string, fn: (...args: T) => void) {
   onNet(event, (...args: T) => {
-    if (!source || (source as any) == '') return;
+    if (!source || (source as any) === '') return;
 
     fn(...args);
   });
@@ -12,9 +12,9 @@ export function hexToRgb(code: string) {
   let result: RegExpExecArray | null = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(code);
   if (!result) return null;
 
-  let r: number = parseInt(result[1], 16);
-  let g: number = parseInt(result[2], 16);
-  let b: number = parseInt(result[3], 16);
+  let r: number = Number.parseInt(result[1], 16);
+  let g: number = Number.parseInt(result[2], 16);
+  let b: number = Number.parseInt(result[3], 16);
 
   return { r: r, g: g, b: b };
 }
@@ -48,10 +48,57 @@ export function getRaycast(): { result: number; hit: any; coords: number[]; surf
   const camRotation = { x: rotX, y: rotY, z: rotZ };
 
   const forwardVector: { x: number; y: number; z: number } = getDirectionFromRotation(camRotation);
-  const front = { x: camPosition.x + forwardVector.x * 10, y: camPosition.y + forwardVector.y * 10, z: camPosition.z + forwardVector.z * 10 };
+  const front = {
+    x: camPosition.x + forwardVector.x * 10,
+    y: camPosition.y + forwardVector.y * 10,
+    z: camPosition.z + forwardVector.z * 10,
+  };
 
-  const raycast: number = StartShapeTestLosProbe(camPosition.x, camPosition.y, camPosition.z, front.x, front.y, front.z, -1, cache.ped, 4);
+  const raycast: number = StartShapeTestLosProbe(
+    camPosition.x,
+    camPosition.y,
+    camPosition.z,
+    front.x,
+    front.y,
+    front.z,
+    -1,
+    cache.ped,
+    4,
+  );
   const [result, hit, coords, surface, entity] = GetShapeTestResultIncludingMaterial(raycast);
 
   return { result, hit, coords, surface, entity };
+}
+
+export function hasItem(source: number, item: string): boolean {
+  return exports.ox_inventory.GetItemCount(source, item) > 0;
+}
+
+export function sendChatMessage(source: number, message: string) {
+  return exports.chat.addMessage(source, message);
+}
+
+export function isAdmin(source: string, group: string): boolean {
+  return IsPlayerAceAllowed(source, group);
+}
+
+export function getHex(hex: string): boolean {
+  return /^#[0-9A-F]{6}$/i.test(hex);
+}
+
+export function getDistance(one: number[], two: number[]): number {
+  const x: number = one[0] - two[0];
+  const y: number = one[1] - two[1];
+  const z: number = one[2] - two[2];
+  return Math.sqrt(x * x + y * y + z * z);
+}
+
+export function getArea(
+  coords: { x: number; y: number; z: number },
+  areas: { x: number; y: number; z: number; radius: number }[],
+): boolean {
+  return areas.some((area) => {
+    const distance: number = Math.sqrt((coords.x - area.x) ** 2 + (coords.y - area.y) ** 2 + (coords.z - area.z) ** 2);
+    return distance <= area.radius;
+  });
 }

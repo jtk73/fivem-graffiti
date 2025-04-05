@@ -1,6 +1,6 @@
 import { oxmysql } from '@overextended/oxmysql';
-import { Graffiti } from '../@types/Graffiti';
-import { RestrictedZones } from '../@types/RestrictedZones';
+import type { Graffiti } from '../@types/Graffiti';
+import type { RestrictedZones } from '../@types/RestrictedZones';
 
 // -- Graffiti --
 
@@ -18,7 +18,7 @@ export async function createGraffitiTable(): Promise<void> {
         hex LONGTEXT NOT NULL,
         created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,
     );
   } catch (error) {
     console.error('createGraffitiTable:', error);
@@ -35,9 +35,20 @@ export async function fetchGraffitiTable(): Promise<Graffiti[]> {
   }
 }
 
-export async function saveGraffiti(creator_id: string, coords: string, dimension: number, text: string, font: number, size: number, hex: string): Promise<unknown> {
+export async function saveGraffiti(
+  creator_id: string,
+  coords: string,
+  dimension: number,
+  text: string,
+  font: number,
+  size: number,
+  hex: string,
+): Promise<unknown> {
   try {
-    return await oxmysql.rawExecute('INSERT INTO graffiti_tags (creator_id, coords, dimension, text, font, size, hex) VALUES (?, ?, ?, ?, ?, ?, ?)', [creator_id, coords, dimension, text, font, size, hex]);
+    return await oxmysql.rawExecute(
+      'INSERT INTO graffiti_tags (creator_id, coords, dimension, text, font, size, hex) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [creator_id, coords, dimension, text, font, size, hex],
+    );
   } catch (error) {
     console.error('saveGraffiti:', error);
   }
@@ -53,7 +64,10 @@ export async function deleteGraffiti(graffitiId: number): Promise<unknown> {
 
 export async function countGraffiti(identifier: string | number): Promise<number> {
   try {
-    const result: { creator_id: string }[] = await oxmysql.query<{ creator_id: string }[]>('SELECT * FROM graffiti_tags WHERE creator_id = ?', [identifier]);
+    const result: { creator_id: string }[] = await oxmysql.query<{ creator_id: string }[]>(
+      'SELECT * FROM graffiti_tags WHERE creator_id = ?',
+      [identifier],
+    );
     return result ? result.length : 0;
   } catch (error) {
     console.error('countGraffiti:', error);
@@ -66,7 +80,17 @@ export async function loadGraffiti(source?: number): Promise<Graffiti[] | undefi
     const graffiti: Graffiti[] = await fetchGraffitiTable();
     graffiti.forEach((graffiti: Graffiti) => {
       const coords: number[] = JSON.parse(graffiti.coords);
-      emitNet('fivem-graffiti:client:createGraffitiTag', source || -1, graffiti.creator_id, coords, graffiti.dimension, graffiti.text, graffiti.font, graffiti.size, graffiti.hex);
+      emitNet(
+        'fivem-graffiti:client:createGraffitiTag',
+        source || -1,
+        graffiti.creator_id,
+        coords,
+        graffiti.dimension,
+        graffiti.text,
+        graffiti.font,
+        graffiti.size,
+        graffiti.hex,
+      );
     });
     console.log(`Loaded ${graffiti.length} Graffiti Tags from the database.`);
     return graffiti;
@@ -88,7 +112,7 @@ export async function createRestrictedZonesTable(): Promise<void> {
         radius INT DEFAULT 0,
         created_date DATETIME DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY (id)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`,
     );
   } catch (error) {
     console.error('createRestrictedZonesTable:', error);
@@ -105,9 +129,17 @@ export async function fetchRestrictedZonesTable(): Promise<RestrictedZones[]> {
   }
 }
 
-export async function saveRestrictedZone(creator_id: string, coords: string, dimension: number, radius: number): Promise<unknown> {
+export async function saveRestrictedZone(
+  creator_id: string,
+  coords: string,
+  dimension: number,
+  radius: number,
+): Promise<unknown> {
   try {
-    return await oxmysql.rawExecute('INSERT INTO graffiti_restricted_zones (creator_id, coords, dimension, radius) VALUES (?, ?, ?, ?)', [creator_id, coords, dimension, radius]);
+    return await oxmysql.rawExecute(
+      'INSERT INTO graffiti_restricted_zones (creator_id, coords, dimension, radius) VALUES (?, ?, ?, ?)',
+      [creator_id, coords, dimension, radius],
+    );
   } catch (error) {
     console.error('saveRestrictedZone:', error);
   }
@@ -123,7 +155,9 @@ export async function deleteRestrictedZone(zoneId: number): Promise<unknown> {
 
 export async function getRestrictedZoneById(zoneId: number): Promise<RestrictedZones | null> {
   try {
-    const [zone] = await oxmysql.query<RestrictedZones[]>('SELECT * FROM graffiti_restricted_zones WHERE id = ?', [zoneId]);
+    const [zone] = await oxmysql.query<RestrictedZones[]>('SELECT * FROM graffiti_restricted_zones WHERE id = ?', [
+      zoneId,
+    ]);
     return zone || null;
   } catch (error) {
     console.error('getRestrictedZoneById:', error);
@@ -144,10 +178,18 @@ export async function getRestrictedZoneCoords(): Promise<{ x: number; y: number;
   }
 }
 
-export async function loadRestrictedZones(): Promise<Array<{ creator_id: string; coords: number[]; dimension: number; radius: number }> | undefined> {
+export async function loadRestrictedZones(): Promise<
+  Array<{ creator_id: string; coords: number[]; dimension: number; radius: number }> | undefined
+> {
   try {
-    const zones: Array<{ creator_id: string; coords: string; dimension: number; radius: number }> = await fetchRestrictedZonesTable();
-    const parsedZones: { creator_id: string; coords: any; dimension: number; radius: number }[] = zones.map((zone) => ({ creator_id: zone.creator_id, coords: JSON.parse(zone.coords), dimension: zone.dimension, radius: zone.radius }));
+    const zones: Array<{ creator_id: string; coords: string; dimension: number; radius: number }> =
+      await fetchRestrictedZonesTable();
+    const parsedZones: { creator_id: string; coords: any; dimension: number; radius: number }[] = zones.map((zone) => ({
+      creator_id: zone.creator_id,
+      coords: JSON.parse(zone.coords),
+      dimension: zone.dimension,
+      radius: zone.radius,
+    }));
     console.log(`Loaded ${parsedZones.length} Restricted Graffiti Zones from the database.`);
     return parsedZones;
   } catch (error) {

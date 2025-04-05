@@ -4,13 +4,10 @@ A standalone 3D-Graffiti system which gives the ability to tag walls and objects
 
 ## Features
 
-- Supports instances and routing buckets; e.g., graffiti placed in dimension #21 won't be visible in dimension #1.
-- Customizable options such as maximum graffiti distance, fonts, hex color, and maximum number of graffiti tags per player.
-- Graffiti persist across sessions and server restarts; e.g., graffiti is retained unless manually removed via command.
+- Supports instances and routing buckets; e.g., graffiti placed in dimension #21 will not be visible in dimension #1.
+- Graffiti persists through sessions and server restarts until manually removed.
 - Graffiti is stored in your database.
-- Utilizes [nativewrappers](https://github.com/nativewrappers) rather than using common methods.
-- Graffiti cannot be placed in specified areas within a set radius; e.g., admin-defined areas.
-- Users can clean graffiti tags, while administrators have the ability to manage any through commands.
+- Administrators have the ability to manage and oversee graffiti via command.
 
 ## Installation
 
@@ -22,14 +19,14 @@ A standalone 3D-Graffiti system which gives the ability to tag walls and objects
 - [ox_lib](https://github.com/overextended/ox_lib)
 - [ox_inventory](https://github.com/overextended/ox_inventory)
 
-### Building this resource
+### Build
 
-1. Download and install the LTS version of Node.js.
+1. Download and install the LTS version of [Node.js](https://nodejs.org/en).
 2. Open a command-line terminal (e.g., Terminal, Command Prompt).
 3. Enter `node --version` to verify the installation.
-4. Run `npm install -g pnpm` to globally install the package.
-5. Download or clone the repository with `git clone https://github.com/arlofonseca/fivem-graffiti`.
-6. Execute the queries found in `install.sql` in your database.
+4. Run `npm install -g pnpm` to globally install the package manager [pnpm](https://pnpm.io).
+5. Download or clone the repository with `git clone https://github.com/jacobbernoulli/fivem-graffiti`.
+6. Execute the queries found in `sql/schema.sql` in your database.
 7. Install all dependencies with `pnpm i`.
 8. Build the resource with `pnpm build`.
 
@@ -39,34 +36,15 @@ Use `pnpm watch` to rebuild whenever a file is modified.
 
 ### Commands
 
-#### `/graffiti [text] [font] [size] [hex]` _(alias: `/grf`)_
+#### Player
 
-- Creates a graffiti tag.
+- `/graffiti [text] [font] [size] [hex]` _(alias: `/grf`)_ - Creates a graffiti tag.
+- `/cleangraffiti` _(alias: `/cgrf`)_ - Cleans and removes the nearest graffiti tag.
 
-#### `/cleangraffiti` _(alias: `/cgrf`)_
+#### Admin
 
-- Cleans and removes the nearest graffiti.
-
-#### [ADMIN] `/nearbygraffitis [radius]` _(alias: `/ng`)_
-
-- Lists all active nearby graffiti, providing detailed information including the owner, unique identifier, location, text, size, and color.
-
-#### [ADMIN] `/removegraffiti [id]` _(alias: `/rg`)_
-
-- Removes graffiti from both the database and world.
-
-#### [ADMIN] `/massremovegraffiti [radius] [include admins 0/1]` _(alias: `/removegraffitis`)_
-
-- Mass removes graffiti from both the database and world within the specified radius. If the second optional parameter is set to `1`, it will also delete graffiti created by admins.
-
-#### [ADMIN] `/addrestrictedzone [radius]` _(alias: `/arz`)_
-
-- Restricts graffiti from being placed within the specified radius.
-
-#### [ADMIN] `/removerestrictedzone [zoneId]` _(alias: `/rrz`)_
-
-- Removes a zone from the database.
-
-## Support
-
-For any feedback or support regarding this script, please reach out on [discord](https://discord.com/invite/QZgyyBkUkp).
+- `/nearbygraffitis [radius]` _(alias: `/ng`)_ - Lists all active nearby graffiti with detailed information.
+- `/removegraffiti [id]` _(alias: `/rg`)_ - Removes graffiti from both the database and world.
+- `/massremovegraffiti [radius] [include admins 0/1]` _(alias: `/removegraffitis`)_ - Mass removes graffiti from both the database and world. If the second optional parameter is set to `1`, it will also delete graffiti created by admins.
+- `/addrestrictedzone [radius]` _(alias: `/arz`)_ - Restricts graffiti from being placed within the specified radius.
+- `/removerestrictedzone [zoneId]` _(alias: `/rrz`)_ - Removes a zone from the database.
